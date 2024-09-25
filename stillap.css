@@ -1,0 +1,117 @@
+body
+{
+    background-color: black;
+    color: white;
+    font-family:  Pro Display, SF Pro Icons, Helvetica Neue, Helvetica, Arial, sans-serif;
+    font-weight: 600;
+}
+header
+{
+    margin-top: 3vh;
+    margin-left: 5vh;
+}
+.nav {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-item {
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.nav-link {
+    color: white;
+    text-decoration: none;
+}
+
+.nav-link:hover {
+    color: gold;
+}
+
+.nav-link:focus {
+    color: gold;
+}
+
+.nav-link.active {
+    font-weight: bold;
+    color: gold;
+}
+
+.nav-link.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.container-fluid {
+    position: relative;
+    text-align: center;
+    color: white;
+}
+.center
+{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(1%, -1%);
+}
+.background-image
+{
+    float: right;
+    margin-left: auto;
+}
+.foszoveg
+{
+    
+    margin-top: 30vh;
+    text-align: left;
+    margin-left: 10vh;
+    font-size: 70px;
+
+}
+.bmi 
+{
+    margin-top: 3vh;
+    margin-left: 10vh;
+    font-size: large;
+
+}
+a
+{
+    color: white;
+}
+a:hover
+{
+    color: gold;
+}
+
+.egesz {
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    margin-top: 2vh;
+}
+
+iframe
+{
+
+    height: 80vh;
+    width: 130vh;
+    border: 5px solid gray;
+    border-radius: 30px;
+}
+
+.col {
+    margin: 12px;
+    padding: 5px;
+    width: 30vh;
+    display: inline-block;
+    align-items: center;
+    justify-content: center;
+    border: 3px gray solid;
+    font-size: 25px;
+    box-shadow: rgba(255, 208, 0, 0.4) -5px 5px, rgba(255, 208, 0, 0.3) -10px 10px, rgba(255, 208, 0, 0.2) -12px 12px, rgba(255, 208, 0, 0.1) -16px 16px, rgba(255, 208, 0, 0.05) -20px 20px;
+    text-align: center;
+    border-top-right-radius: 30px;
+    border-bottom-left-radius: 30px;
+}

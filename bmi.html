@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BMI Kalkulátor</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f7f7f7;
+            display: flex;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            max-width: 1000px;
+            width: 100%;
+        }
+        .tartalom, .eredmeny-panel {
+            background-color: #b4b4b4;
+            padding: 2rem;
+            border-top-right-radius: 30px;
+            border-bottom-left-radius: 30px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            min-width: 300px;
+        }
+        h1, h2 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .beviteli-mezo {
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+            font-weight: bold;
+        }
+        select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat;
+            background-position: right 0.7rem top 50%;
+            background-size: 0.65rem auto;
+        }
+        button {
+            width: 100%;
+            padding: 1rem;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: background-color 0.3s, transform 0.1s;
+            margin-bottom: 1rem;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        #javaslatok {
+            margin-top: 1.5rem;
+            font-style: italic;
+            color: #666;
+            line-height: 1.6;
+        }
+        #diagramContainer {
+            margin-top: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="tartalom">
+            <h1>BMI Kalkulátor</h1>
+            <button onclick="kezdes()">BMI Számítás Kezdése</button>
+            <div id="testsulyMezo" class="beviteli-mezo">
+                <label for="testsuly">Testsúly (kg):</label>
+                <select id="testsuly" onchange="magassagMutat()">
+                    <option value="">Válasszon...</option>
+                </select>
+            </div>
+            <div id="magassagMezo" class="beviteli-mezo">
+                <label for="magassag">Testmagasság (cm):</label>
+                <select id="magassag" onchange="szamitasGombMutat()">
+                    <option value="">Válasszon...</option>
+                </select>
+            </div>
+            <button id="szamitasGomb" onclick="bmiszamitas()" style="display: none;">BMI Számítása</button>
+        </div>
+        <div class="eredmeny-panel" style="display: none;">
+            <h2>Eredmény</h2>
+            <div id="eredmeny"></div>
+            <div id="javaslatok"></div>
+            <div id="celBMIMezo" class="beviteli-mezo" style="display: block;">
+                <label for="celBMI">Válassza ki a cél BMI kategóriát:</label>
+                <select id="celBMI" onchange="celBMISzamitas()">
+                    <option value="">Válasszon...</option>
+                    <option value="sovany">Sovány (BMI < 18.5)</option>
+                    <option value="normal">Normál (18.5 <= BMI < 25)</option>
+                    <option value="tulsulyos">Túlsúlyos (BMI >= 25)</option>
+                </select>
+            </div>
+            <div id="celEredmeny"></div>
+            <div id="diagramContainer">
+                <canvas id="bmiDiagram"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let bmiChart;
+        let aktualisBMI;
+        let testsuly, magassag;
+
+        const testsulySelect = document.getElementById('testsuly');
+        const magassagSelect = document.getElementById('magassag');
+
+        for (let i = 30; i <= 200; i++) {
+            let option = document.createElement('option');
+            option.value = i;
+            option.textContent = i + ' kg';
+            testsulySelect.appendChild(option);
+        }
+
+        for (let i = 140; i <= 220; i++) {
+            let option = document.createElement('option');
+            option.value = i;
+            option.textContent = i + ' cm';
+            magassagSelect.appendChild(option);
+        }
+
+        function kezdes() {
+            document.getElementById('testsulyMezo').style.display = 'block';
+            event.target.style.display = 'none';
+        }
+
+        function magassagMutat() {
+            if (testsulySelect.value !== "") {
+                document.getElementById('magassagMezo').style.display = 'block';
+            }
+        }
+
+        function szamitasGombMutat() {
+            if (magassagSelect.value !== "") {
+                document.getElementById('szamitasGomb').style.display = 'block';
+            }
+        }
+
+        function bmiszamitas() {
+            testsuly = parseFloat(testsulySelect.value);
+            magassag = parseFloat(magassagSelect.value) / 100;
+            
+            if (isNaN(testsuly) || isNaN(magassag) || testsuly <= 0 || magassag <= 0) {
+                alert('Kérem, válasszon értékeket mindkét mezőben!');
+                return;
+            }
+
+            aktualisBMI = testsuly / (magassag * magassag);
+            let kategoria, szin;
+
+            if (aktualisBMI < 18.5) {
+                kategoria = "Sovány";
+                szin = "#FFA500";
+            } else if (aktualisBMI < 25) {
+                kategoria = "Normál testsúly";
+                szin = "#4CAF50";
+            } else {
+                kategoria = "Túlsúlyos";
+                szin = "#FF4500";
+            }
+
+            const eredmenyDiv = document.getElementById('eredmeny');
+            eredmenyDiv.innerHTML = `
+                <h2 style="color: ${szin};">BMI: ${aktualisBMI.toFixed(2)}</h2>
+                <p>Kategória: ${kategoria}</p>
+            `;
+
+            const javaslatokDiv = document.getElementById('javaslatok');
+            if (aktualisBMI >= 25) {
+                const tobbletSuly = (testsuly - (24.9 * magassag * magassag)).toFixed(2);
+                const kaloriacsokkentes = (tobbletSuly * 7700 / 90).toFixed(0);
+                javaslatokDiv.innerHTML = `
+                    <p>Ön ${tobbletSuly} kg-mal van a normál testsúly felett.</p>
+                    <p>Javasolt napi kalóriacsökkentés: ${kaloriacsokkentes} kalória a következő 90 napban.</p>
+                    <p>Tippek az egészséges fogyáshoz:</p>
+                    <ul>
+                        <li>Fogyasszon több zöldséget és gyümölcsöt</li>
+                        <li>Csökkentse a feldolgozott ételek fogyasztását</li>
+                        <li>Igyon több vizet</li>
+                        <li>Végezzen rendszeres testmozgást (pl. napi 30 perc séta)</li>
+                    </ul>
+                `;
+            } else if (aktualisBMI <= 19) {
+                const kisebbSuly = (testsuly - (18.8 * magassag * magassag)).toFixed(2);
+                const kalorianov = (kisebbSuly / 7700 / 90).toFixed(0);
+                javaslatokDiv.innerHTML = `
+                    <p>Ön ${kisebbSuly} kg-mal van a normál testsúly alatt.</p>
+                    <p>Javasolt napi kalórianövelés: ${kalorianov} kalória a következő 90 napban.</p>
+                    <p>Tippek az egészséges fogyáshoz:</p>
+                    <ul>
+                        <li>Fogyasszon több kalóriadús ételeket</li>
+                        <li>Növelje a feldolgozott ételek fogyasztását</li>
+                        <li>Igyon több vizet</li>
+                        <li>Végezzen rendszeres testmozgást (pl. napi 30 perc séta)</li>
+                        <li>Egyen többet viszont egészséges ételeket.</li>
+                    </ul>
+                `;
+            } else {
+                javaslatokDiv.innerHTML = `
+                    <p>Az Ön testsúlya a normál tartományban van. Folytassa az egészséges életmódot!</p>
+                `;
+            }
+
+            document.querySelector('.eredmeny-panel').style.display = 'block';
+            diagramRajzolas();
+        }
+
+        function diagramRajzolas() {
+            const ctx = document.getElementById('bmiDiagram').getContext('2d');
+            
+            if (bmiChart) {
+                bmiChart.destroy();
+            }
+
+            bmiChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Sovány', 'Normál', 'Túlsúlyos'],
+                    datasets: [{
+                        label: 'BMI Kategóriák',
+                        data: [18.5, 25, 30],
+                        backgroundColor: [
+                            '#FFA500',
+                            '#4CAF50',
+                            '#FF4500'
+                        ],
+                        borderColor: [
+                            '#FF8C00',
+                            '#45a049',
+                            '#FF0000'
+                        ],
+                        borderWidth: 1
+                    }, {
+                        label: 'Az Ön BMI-je',
+                        data: [aktualisBMI, aktualisBMI, aktualisBMI],
+                        type: 'line',
+                        borderColor: '#3498db',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#3498db',
+                        pointRadius: 5,
+                        fill: false
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'BMI Érték'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true
+                        },
+                        title: {
+                            display: true,
+                            text: 'BMI Kategóriák Áttekintése'
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('diagramContainer').style.display = 'block';
+        }
+
+        function celBMISzamitas() {
+            const celBMI = document.getElementById('celBMI').value;
+            let celBMIErtek;
+
+            switch(celBMI) {
+                case 'sovany':
+                    celBMIErtek = 18.4;
+                    break;
+                case 'normal':
+                    celBMIErtek = 21.75;
+                    break;
+                case 'tulsulyos':
+                    celBMIErtek = 25.1;
+                    break;
+                default:
+                    alert('Kérem, válasszon cél BMI kategóriát!');
+                    return;
+            }
+
+            const celTestsuly = celBMIErtek * (magassag * magassag);
+            const sulyValtozas = celTestsuly - testsuly;
+
+            const celEredmenyDiv = document.getElementById('celEredmeny');
+            celEredmenyDiv.innerHTML = `
+                <p>A választott cél BMI eléréséhez ${Math.abs(sulyValtozas).toFixed(2)} kg-ot kell ${sulyValtozas > 0 ? 'felvennie' : 'leadnia'}.</p>
+                <p>Cél testsúly: ${celTestsuly.toFixed(2)} kg</p>
+            `;
+
+            bmiChart.data.datasets.push({
+                label: 'Cél BMI',
+                data: [celBMIErtek, celBMIErtek, celBMIErtek],
+                type: 'line',
+                borderColor: '#e74c3c',
+                borderWidth: 2,
+                pointBackgroundColor: '#e74c3c',
+                pointRadius: 5,
+                fill: false
+            });
+            bmiChart.update();
+        }
+    </script>
+</body>
+</html>
